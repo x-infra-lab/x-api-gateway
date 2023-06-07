@@ -24,7 +24,7 @@ Multiple http servers are supported. default http Server is reactor-netty-http.
 
 - interface HttpRequest.
 
-```bash
+```java
 interface HttpRequest {
 		URL getURI();
 		HttpMethod getMethod();
@@ -32,25 +32,28 @@ interface HttpRequest {
 		MultiValueMap<String, HttpCookie> getCookies();
 		Flux<DataBuffer> getBody();
 }
+
 ```
 
 - interface HttpResponse.
 
-```bash
+```java
 interface HttpResponse {
 		HttpStatus getStatus();
 		HttpHeaders getHeaders();
 		MultiValueMap<String, HttpCookie> getCookies();
 		Mono<Void> writeWith(Publisher<DataBuffer> body);
 }
+
 ```
 
 HttpHandler完整实现：
 
-```java
+```
 interface HttpHandler {
 		void handle(HttpRequest request, HttpResponse response);
 }
+
 ```
 
 ### ServerAdapter
@@ -73,7 +76,7 @@ HttpResponse默认实现： ReactorHttpResponse
 
 ServerWebExchange
 
-```bash
+```java
 interface ServerWebExchange {
 		HttpRequest getRequest();
 		HttpResponse getResponse();
@@ -81,67 +84,72 @@ interface ServerWebExchange {
 		Mono<MutiValueMap<String, String>> getFormData();
 		<T> Mono<T> getJsonData();
 }
+
 ```
 
-WebHandler 
+WebHandler
 
-```bash
+```java
 interface WebHandler {
 		Mono<Void> handle(ServerWebExchange exchange);
 }
+
 ```
 
 ### WebHandlerDecorator
 
 WebHandlerDecorator 提供一个WebHandler的包装&代理
 
-```bash
+```java
 class WebHandlerDecorator implements WebHandler {
 		private final WebHandler delegate;
-		
+
 		public WebHandlerDecorator(WebHandler delegate) {
-		Assert.notNull(delegate, "'delegate' must not be null");
-		this.delegate = delegate;
+				Assert.notNull(delegate, "'delegate' must not be null");
+				this.delegate = delegate;
 		}
-		
+
 		@Override
 		public Mono<Void> handle(ServerWebExchange exchange) {
-			return this.delegate.handle(exchange);
+				return this.delegate.handle(exchange);
 		}
 }
+
 ```
 
-可以通过继承此类并重写handle方法，对某一个WebHandler进行包装，提供额外处理功能。可以查看后续的 `ExceptionHandlingWebHandler`  HttpWebHandlerAdapter
+可以通过继承此类并重写handle方法，对某一个WebHandler进行包装，提供额外处理功能。可以查看后续的 `ExceptionHandlingWebHandler`  `HttpWebHandlerAdapter`
 
 **HttpWebHandlerAdapter**
 
 通过一个Adapter，将HttpHandler和WebHandler的行为联系起来。即HttpHandler接收请求然后交由被委托的WebHandler进行处理。
 
-```bash
+```java
 class HttpWebHandlerAdapter extends WebHandlerDecorator implements HttpHandler {
-	....
+		....
 }
+
 ```
 
-`**ExceptionHandlingWebHandler**`
+- `ExceptionHandlingWebHandler`
 
 对委托的WebHandler提供Exception处理能力
 
-```bash
+```java
 class ExceptionHandlingWebHandler extends WebHandlerDecorator {
-		public ExceptionHandlingWebHandler(WebHandler delegate,
-													 List<WebExceptionHandler> handlers) {
-		....	
+		public ExceptionHandlingWebHandler(WebHandler delegate, List<WebExceptionHandler> handlers) {
+				....
 		}
-} 
+}
+
 ```
 
-```bash
+```java
 public interface WebExceptionHandler {
 
 		Mono<Void> handle(ServerWebExchange exchange, Throwable ex);
 
 }
+
 ```
 
 ### Route
@@ -159,13 +167,14 @@ Route由一个id，一个RoutePredicate，一组GatewayFilter以及一个Endpoin
 
 ```java
 interface RoutePredicate extends Ordered {
-			
+
 			Mono<Boolean> test(ServerWebExchange exchange);
-		  
+
 			default RoutePredicate or(RoutePredicate other){..}
 			default RoutePredicate and(RoutePredicate ohter){..}
 			default RoutePredicate negative(){..}
 }
+
 ```
 
 断言参数配置
@@ -176,7 +185,7 @@ interface Configable {
 }
 
 interface Config {
-		
+
 }
 // 基础实现
 class NameValueConfig implements Config{
@@ -188,6 +197,7 @@ class NameValuesConfig implements Config{
 		private String name;
 		private Set<String> values;
 }
+
 ```
 
 ```java
@@ -200,6 +210,7 @@ abstract class AbstraceRoutePredicate<C extends Config> implements RoutePredicat
 				 return this.config;
 		 }
 }
+
 ```
 
 举例说明：HttpMethodPredicate 判断请求方法
@@ -211,11 +222,11 @@ class HttpMethodPredicate extends AbstraceRoutePredicate<NameValuesPredicateConf
 		}
 		public Mono<Boolean> test(ServerWebExchange exchange) {
 				return Mono.just(exchange->{
-								return getConfig().getValues()
-												.contains(exchange.getRequest().getMethod().toString());
-						});
+						return getConfig().getValues().contains(exchange.getRequest().getMethod().toString());
+			  });
 		}
 }
+
 ```
 
 ### **RoutePredicateWebHandler**
@@ -223,21 +234,21 @@ class HttpMethodPredicate extends AbstraceRoutePredicate<NameValuesPredicateConf
 用于断言路由
 
 ```java
-public class RoutePredicateWebHandler ****extends WebHandlerDecorator {
+public class RoutePredicateWebHandler extends WebHandlerDecorator {
 
 			private RouteLocator routeLocator;
-			
+
 			@Override
 			public Mono<Void> handle(ServerWebExchange exchange) {
 					return lookupRoute(exchange)
-														 .switchIfEmpty(...)
-														 .flatMap(route -> {
-																  exchange.setAttribte(ROUTE_KEY, route);
-																  return Mono.just(super.handle(exchange));
-															});
-															
+						.switchIfEmpty(...)
+						.flatMap(route -> {
+								exchange.setAttribte(ROUTE_KEY, route);
+						  	return Mono.just(super.handle(exchange));
+						});
 			}
 }
+
 ```
 
 ### GatewayFilter
@@ -246,12 +257,14 @@ public class RoutePredicateWebHandler ****extends WebHandlerDecorator {
 interface GatewayFilter {
 		Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain);
 }
+
 ```
 
 ```java
 interface GatewayFilterChain {
 		Mono<Void> filter(ServerWebExchange exchange);
 }
+
 ```
 
 ```java
@@ -261,15 +274,16 @@ class DefaultGatewayFilterChain implements GatewayFilterChain {
 		public DefaultGatewayFilterChain(List<GatewayFilter> filters) {
 				this.filters = filters;
 		}
-		
+
 		Mono<Void> filter(ServerWebExchange exchange) {
 				if(index < filters.length()){
-						retrun filters.get(index++).filer(exchange, this);
+					retrun filters.get(index++).filer(exchange, this);
 				} else {
-						retrun Mono.empty();
+					retrun Mono.empty();
 				}
 		}
 }
+
 ```
 
 ### FilteringWebHandler
@@ -278,11 +292,11 @@ class DefaultGatewayFilterChain implements GatewayFilterChain {
 
 ```java
 class FilteringWebHandler implements WebHandler {
-		
-		private List<GatewayFilter> globalFilters;		
+
+		private List<GatewayFilter> globalFilters;
 
 		Mono<Void> handle(ServerWebExchange exchange) {
-				Route route = exchange.getRequiredAttribute(ROUTE_KEY);	
+				Route route = exchange.getRequiredAttribute(ROUTE_KEY);
 				List<GatewayFilter> filters = Route.getFilters();
 				filters = List.combine(globalFilters, filters).sort();
 				GatewayFilterChain chain = new DefaltGatewayFilterChain(filters);
@@ -290,6 +304,7 @@ class FilteringWebHandler implements WebHandler {
 		}
 
 }
+
 ```
 
 ### Endpoint
@@ -300,6 +315,7 @@ Endpoint代表了这个路由最终调用的端点
 interface Endpoint {
 		Mono<Void> invoke(ServerWebExchange exchange);
 }
+
 ```
 
 ### Protocol & Refrence
@@ -317,24 +333,25 @@ enum Protocol {
 }
 
 interface Refrence {
-		
+
 }
 
 abstract class AbstractEndpoint<R extends Refrence> {
-		
+
 		private final Portocol protocol;
 
 		private final R refrence;
-		
+
 		public AbstractEndpoint(Protocol protocol, R refrence) {
 				this.protocol = protocol;
 				this.refrence = refrence;
 		}
-		
+
 		public R getRefrence(){
 				return this.refrence;
 		}
 }
+
 ```
 
 以http endpoint为例：
@@ -348,11 +365,12 @@ class HttpEndpoint extends AbstractEndpoint<HttpRefrence>{
 		public HttpEndpoint(HttpRefrence refrence){
 				super(Protocol.HTTP, refrence);
 		}
-		
+
 		public Mono<Void> invoke(ServerWebExchange exchange){
 				....
 		}
 }
+
 ```
 
 ### InvokeEndpointGatewayFilter
@@ -368,10 +386,11 @@ class InvokeEndpointGatewayFilter implements GatewayFilter {
 		}
 
 		Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-					return endpoint.invoke(exchange).then(chain.filter(exchange));
+				return endpoint.invoke(exchange).then(chain.filter(exchange));
 		}
 
 }
+
 ```
 
 ## Observability
@@ -391,7 +410,7 @@ class TracingWebHandler extends WebHandlerDecorator {
 		public TracingWebHandler(WebHandler webhandler){
 				super(webhandler);
 		}
-		
+
 		@Override
 		public Mono<Void> handle(ServerWebExchange exchange) {
 				return Mono.just(()->{
@@ -407,8 +426,9 @@ class TracingWebHandler extends WebHandlerDecorator {
 						Span span = exchange.getRequiredAttribute(SPAN_KEY)
 						// finish span
 				});
-		}		
+		}
 }
+
 ```
 
 向下游传递Span，以Http为例：
@@ -418,13 +438,14 @@ class HttpEndpoint extends AbstractEndpoint<HttpRefrence>{
 		public HttpEndpoint(HttpRefrence refrence){
 				super(Protocol.HTTP, refrence);
 		}
-		
+
 		public Mono<Void> invoke(ServerWebExchange exchange){
 				// Span信息注入，传递给下游
 				SpanHeaderInjecter.inject(exchange.getRequest().getHeaders());
 				....
 		}
 }
+
 ```
 
 ### Metric
@@ -433,7 +454,7 @@ class HttpEndpoint extends AbstractEndpoint<HttpRefrence>{
 
 | Metric | Type | Labels | Desc |
 | --- | --- | --- | --- |
-| requestTime | Histogram | route_id, http_status  | 统计请求的耗时+请求数 |
+| requestTime | Histogram | route_id, http_status | 统计请求的耗时+请求数 |
 | requestBodyBytes【TODO】 | Histogram | route_id | 统计请求体的大小 |
 | routePredicateTime | Histogram | route_id | 统计路由断言耗时 |
 | inprogressRequests | Gauge | route_id | 统计正在处理的请求数量 |
@@ -447,7 +468,7 @@ class MetricWebHandler extends WebHandlerDecorator {
 		public MetricWebHandler(WebHandler webhandler){
 				super(webhandler);
 		}
-		
+
 		@Override
 		public Mono<Void> handle(ServerWebExchange exchange) {
 				return Mono.just(()->{
@@ -464,15 +485,16 @@ class MetricWebHandler extends WebHandlerDecorator {
 						// 记录指标
 						inprogressRequests.dec();
 				});
-		}		
+		}
 }
+
 ```
 
 ```java
 public class RoutePredicateWebHandler ****extends WebHandlerDecorator {
-			private Histogram routePredicateTime; 
+			private Histogram routePredicateTime;
 			private RouteLocator routeLocator;
-			
+
 			@Override
 			public Mono<Void> handle(ServerWebExchange exchange) {
 					return lookupRoute(exchange)
@@ -481,13 +503,13 @@ public class RoutePredicateWebHandler ****extends WebHandlerDecorator {
 																  exchange.setAttribte(ROUTE_KEY, route);
 																  return Mono.just(super.handle(exchange));
 															});
-															
+
 			}
-			
+
 			private Flux<Route> lookupRoute(ServerWebExchange exchange) {
 				return Flux.just(()->{
-									 Timer timer = new Timer();
-									 exchange.setAttribute(PREDICATE_TIMER, timer);
+							Timer timer = new Timer();
+							exchange.setAttribute(PREDICATE_TIMER, timer);
 							 }).then(...)
 							 .finialy(()->{
 									 Timer timer = exchange.getRequiredAttribute(PREDICATE_TIMER);
@@ -497,6 +519,7 @@ public class RoutePredicateWebHandler ****extends WebHandlerDecorator {
 								})
 			}
 }
+
 ```
 
 ```java
@@ -513,7 +536,7 @@ class InvokeEndpointGatewayFilter implements GatewayFilter {
 							Timer timer = new Timer();
 							exchange.setAttribute(INVOKE_TIMER, timer);
 					}).then(() -> {
-              endpoint.invoke(exchange).then(chain.filter(exchange));
+             endpoint.invoke(exchange).then(chain.filter(exchange));
 					}).finialy(() -> {
 							Timer timer = exchange.getRequiredAttribute(INVOKE_TIMER);
 							timer.end();
@@ -523,6 +546,7 @@ class InvokeEndpointGatewayFilter implements GatewayFilter {
 		}
 
 }
+
 ```
 
 ### Logging
@@ -543,21 +567,23 @@ class AccessLog {
 		private String responseBody;
 
 }
+
 ```
 
 ```java
 interface AccessLogCollector {
 		void collect(AccessLog accessLog);
 }
+
 ```
 
 ```java
 class LoggingWebHandler extends WebHandlerDecorator {
-		
+
 		public LoggingWebHandler(WebHandler webhandler){
 				super(webhandler);
 		}
-		
+
 		@Override
 		public Mono<Void> handle(ServerWebExchange exchange) {
 				return Mono.just(()->{
@@ -569,11 +595,12 @@ class LoggingWebHandler extends WebHandlerDecorator {
 				.finialy(()->{
 						AccessLog accessLog = exchange.getRequiredAttribute(ACCESS_LOG)
 						// set log properties
-						... 
+						...
 						AccessLogCollectorManager.collect(accessLog);
 				});
 		}
 }
+
 ```
 
 ## Summary
