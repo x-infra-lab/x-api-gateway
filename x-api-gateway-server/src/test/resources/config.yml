@@ -1,0 +1,15 @@
+
+routes:
+  - id: test
+    predicates:
+      - name: Path
+        config: 'pattern: hello'
+    filters:
+      - name: AddHeader
+        config: 'proxy: x-api-gateway'
+    endpoint:
+      name: Http
+      config: |
+        hosts:
+          - http://127.0.0.1:9999/helloworld
+          - http://localhost:9999/helloworld
