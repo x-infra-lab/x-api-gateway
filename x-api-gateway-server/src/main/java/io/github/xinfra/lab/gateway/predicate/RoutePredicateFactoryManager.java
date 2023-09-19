@@ -11,13 +11,23 @@ import java.util.Set;
 @Slf4j
 public class RoutePredicateFactoryManager {
 
+    public static final RoutePredicateFactoryManager INSTANCE = new RoutePredicateFactoryManager();
     /**
      * key: Predicate Name
      */
-    private static final Map<String, RoutePredicateFactory> factoryMap = new HashMap<>();
+    private Map<String, RoutePredicateFactory> factoryMap = new HashMap<>();
 
-    static {
-        Reflections reflections = new Reflections();
+    public RoutePredicateFactoryManager() {
+        scan(RoutePredicateFactoryManager.class.getPackage().getName());
+    }
+
+
+    public RoutePredicateFactory lookup(String name) {
+        return factoryMap.get(name);
+    }
+
+    public void scan(String packageName) {
+        Reflections reflections = new Reflections(packageName);
         Set<Class<? extends RoutePredicateFactory>> subTypes = reflections.getSubTypesOf(RoutePredicateFactory.class);
         subTypes.forEach(clazz -> {
             try {
@@ -28,9 +38,5 @@ public class RoutePredicateFactoryManager {
             }
         });
         log.info("scan RoutePredicateFactory result:{}", factoryMap);
-    }
-
-    public static RoutePredicateFactory lookup(String name) {
-        return factoryMap.get(name);
     }
 }

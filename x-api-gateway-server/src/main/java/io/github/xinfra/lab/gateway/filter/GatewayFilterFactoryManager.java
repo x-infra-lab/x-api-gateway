@@ -10,10 +10,21 @@ import java.util.Set;
 @Slf4j
 public class GatewayFilterFactoryManager {
 
-    private static final Map<String, GatewayFilterFactory> factoryMap = new HashMap<>();
+    public static final GatewayFilterFactoryManager INSTANCE = new GatewayFilterFactoryManager();
 
-    static {
-        Reflections reflections = new Reflections();
+    private Map<String, GatewayFilterFactory> factoryMap = new HashMap<>();
+
+    public GatewayFilterFactoryManager() {
+        scan(GatewayFilterFactoryManager.class.getPackage().getName());
+    }
+
+
+    public GatewayFilterFactory lookup(String name) {
+        return factoryMap.get(name);
+    }
+
+    public void scan(String packageName) {
+        Reflections reflections = new Reflections(packageName);
         Set<Class<? extends GatewayFilterFactory>> subTypes = reflections.getSubTypesOf(GatewayFilterFactory.class);
         subTypes.forEach(clazz -> {
             try {
@@ -24,9 +35,5 @@ public class GatewayFilterFactoryManager {
             }
         });
         log.info("scan GatewayFilterFactory result:{}", factoryMap);
-    }
-
-    public static GatewayFilterFactory lookup(String name) {
-        return factoryMap.get(name);
     }
 }

@@ -21,7 +21,7 @@ public class BaseTest {
 
 
     /**
-     * use
+     * use custom config path
      *
      * @param port
      * @param configPath

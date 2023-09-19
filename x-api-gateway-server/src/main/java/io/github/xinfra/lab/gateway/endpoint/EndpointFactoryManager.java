@@ -9,10 +9,21 @@ import java.util.Set;
 
 @Slf4j
 public class EndpointFactoryManager {
-    private static final Map<String, EndpointFactory> factoryMap = new HashMap<>();
 
-    static {
-        Reflections reflections = new Reflections();
+    public static final EndpointFactoryManager INSTANCE = new EndpointFactoryManager();
+
+    private Map<String, EndpointFactory> factoryMap = new HashMap<>();
+
+    public EndpointFactoryManager() {
+        scan(EndpointFactoryManager.class.getPackage().getName());
+    }
+
+    public EndpointFactory lookup(String name) {
+        return factoryMap.get(name);
+    }
+
+    public void scan(String packageName) {
+        Reflections reflections = new Reflections(packageName);
         Set<Class<? extends EndpointFactory>> subTypes = reflections.getSubTypesOf(EndpointFactory.class);
         subTypes.forEach(clazz -> {
             try {
@@ -23,9 +34,5 @@ public class EndpointFactoryManager {
             }
         });
         log.info("scan EndpointFactory result:{}", factoryMap);
-    }
-
-    public static EndpointFactory lookup(String name) {
-        return factoryMap.get(name);
     }
 }

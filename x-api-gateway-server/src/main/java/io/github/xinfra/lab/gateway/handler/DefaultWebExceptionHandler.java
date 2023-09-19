@@ -37,9 +37,9 @@ public class DefaultWebExceptionHandler implements WebExceptionHandler {
             }
 
             exchange.getResponse().status(status);
-            exchange.getResponse().addHeader(GatewayHeaders.X_GATEWAY_ERROR_CODE_HEADER_KEY,
+            exchange.getResponse().addHeader(GatewayHeaders.Names.X_GATEWAY_ERROR_CODE,
                     String.valueOf(errorCode.getCode()));
-            exchange.getResponse().addHeader(GatewayHeaders.X_GATEWAY_ERROR_MSG_HEADER_KEY,
+            exchange.getResponse().addHeader(GatewayHeaders.Names.X_GATEWAY_ERROR_MSG,
                     errorCode.getMsg());
         }).doOnNext(v -> {
             markResponseCommitted(exchange);

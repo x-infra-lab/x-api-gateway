@@ -16,6 +16,8 @@ import io.github.xinfra.lab.gateway.predicate.RoutePredicateDefinition;
 import io.github.xinfra.lab.gateway.predicate.RoutePredicateFactory;
 import io.github.xinfra.lab.gateway.predicate.RoutePredicateFactoryManager;
 import io.github.xinfra.lab.gateway.server.ServerWebExchange;
+import lombok.Getter;
+import lombok.Setter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,19 +25,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Getter
+@Setter
 public class RouteDefinitionRouteLocator implements RouteLocator {
 
     private RouteDefinitionLocator routeDefinitionLocator;
 
     private Binder binder = new YmlBinder();
 
+    private EndpointFactoryManager endpointFactoryManager = EndpointFactoryManager.INSTANCE;
+
+    private RoutePredicateFactoryManager routePredicateFactoryManager = RoutePredicateFactoryManager.INSTANCE;
+
+    private GatewayFilterFactoryManager gatewayFilterFactoryManager = GatewayFilterFactoryManager.INSTANCE;
+
     public RouteDefinitionRouteLocator(RouteDefinitionLocator routeDefinitionLocator) {
         this.routeDefinitionLocator = routeDefinitionLocator;
-    }
-
-    public RouteDefinitionRouteLocator(RouteDefinitionLocator routeDefinitionLocator, Binder binder) {
-        this.routeDefinitionLocator = routeDefinitionLocator;
-        this.binder = binder;
     }
 
     @Override
@@ -54,7 +59,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
     }
 
     private Endpoint buildEndpoint(EndpointDefinition endpoint) {
-        EndpointFactory endpointFactory = EndpointFactoryManager.lookup(endpoint.getName());
+        EndpointFactory endpointFactory = endpointFactoryManager.lookup(endpoint.getName());
         Class configClass = endpointFactory.getConfigClass();
         Object config = this.binder.binder(configClass, endpoint.getConfig());
         return endpointFactory.apply(config);
@@ -66,7 +71,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
         }
         List<GatewayFilter> filters = new ArrayList<>();
         filterDefinitions.forEach(definition -> {
-            GatewayFilterFactory filterFactory = GatewayFilterFactoryManager.lookup(definition.getName());
+            GatewayFilterFactory filterFactory = gatewayFilterFactoryManager.lookup(definition.getName());
             Class configClass = filterFactory.getConfigClass();
             Object config = this.binder.binder(configClass, definition.getConfig());
             filters.add(filterFactory.apply(config));
@@ -89,7 +94,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 
     private RoutePredicate<ServerWebExchange> buildRoutePredicate(RoutePredicateDefinition routePredicateDefinition) {
         String name = routePredicateDefinition.getName();
-        RoutePredicateFactory routePredicateFactory = RoutePredicateFactoryManager.lookup(name);
+        RoutePredicateFactory routePredicateFactory = routePredicateFactoryManager.lookup(name);
         if (routePredicateFactory == null) {
             throw new IllegalArgumentException("routePredicateFactory named:" + name + " not found");
         }

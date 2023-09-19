@@ -1,10 +1,15 @@
 package io.github.xinfra.lab.gateway.endpoint;
 
 import io.github.xinfra.lab.gateway.BaseTest;
+import io.github.xinfra.lab.gateway.common.TestSocketUtils;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.http.server.HttpServer;
 
 
@@ -14,11 +19,14 @@ public class HttpEndpointTest extends BaseTest {
     @Test
     public void httpEndpointTest1() {
 
-        DisposableServer gatewayServer = startGatewayServer(8888);
+        int gatewayServerPort = TestSocketUtils.findAvailableTcpPort();
+        DisposableServer gatewayServer = startGatewayServer(gatewayServerPort);
         log.info("gatewayServer started.");
 
+        // see config.yml
+        int httpServerPort = 9999;
         DisposableServer httpServer = HttpServer.create()
-                .port(9999)
+                .port(httpServerPort)
                 .route(routes ->
                         routes.get("/helloworld",
                                 (httpServerRequest, httpServerResponse) -> {
@@ -28,6 +36,25 @@ public class HttpEndpointTest extends BaseTest {
                 ).bind().block();
         log.info("httpServer started.");
 
-        httpServer.onDispose().block();
+
+        HttpClientResponse response = HttpClient.create()
+                .get()
+                .uri(String.format("http://localhost:%s/helloworld", httpServerPort))
+                .response()
+                .block();
+        Assert.assertEquals(response.status(), HttpResponseStatus.OK);
+        log.info("httpclient request httpServer success.");
+
+
+        response = HttpClient.create()
+                .get()
+                .uri(String.format("http://localhost:%s/hello", gatewayServerPort))
+                .response()
+                .block();
+        Assert.assertEquals(response.status(), HttpResponseStatus.OK);
+        log.info("httpclient request gatewayServer success.");
+
+        httpServer.disposeNow();
+        gatewayServer.disposeNow();
     }
 }
