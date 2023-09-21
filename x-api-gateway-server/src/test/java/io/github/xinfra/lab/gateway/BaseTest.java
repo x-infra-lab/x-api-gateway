@@ -1,7 +1,7 @@
 package io.github.xinfra.lab.gateway;
 
 import io.github.xinfra.lab.gateway.bootstrap.GatewayServerBootstrap;
-import reactor.netty.DisposableServer;
+import io.github.xinfra.lab.gateway.route.RouteLocator;
 
 
 public class BaseTest {
@@ -12,11 +12,10 @@ public class BaseTest {
      * @param port
      * @return
      */
-    public DisposableServer startGatewayServer(int port) {
-        DisposableServer server = new GatewayServerBootstrap()
+    public GatewayServerBootstrap startGatewayServer(int port) {
+        return new GatewayServerBootstrap()
                 .port(port)
                 .start();
-        return server;
     }
 
 
@@ -27,14 +26,28 @@ public class BaseTest {
      * @param configPath
      * @return
      */
-    public DisposableServer startGatewayServer(int port,
-                                               String configPath) {
+    public GatewayServerBootstrap startGatewayServer(int port,
+                                                     String configPath) {
 
-        DisposableServer server = new GatewayServerBootstrap()
+        return new GatewayServerBootstrap()
                 .port(port)
                 .configPath(configPath)
                 .start();
-        return server;
     }
 
+    /**
+     * use custom routeLocator
+     *
+     * @param port
+     * @param routeLocator
+     * @return
+     */
+    public GatewayServerBootstrap startGatewayServer(int port,
+                                                     RouteLocator routeLocator) {
+
+        return new GatewayServerBootstrap()
+                .port(port)
+                .routeLocator(routeLocator)
+                .start();
+    }
 }

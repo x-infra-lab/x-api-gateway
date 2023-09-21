@@ -4,9 +4,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class GatewayConfigManager {
@@ -24,7 +22,7 @@ public class GatewayConfigManager {
                     .getContextClassLoader()
                     .getResource(DEFAULT_CONFIG_YML_FILE_NAME)
                     .toURI();
-        } catch (URISyntaxException e) {
+        } catch (Exception e) {
             throw new RuntimeException("fail get default config file.", e);
         }
         load(uri.getPath());

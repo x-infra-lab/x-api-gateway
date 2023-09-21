@@ -1,4 +1,4 @@
-package io.github.xinfra.lab.gateway.bootstrap;
+package io.github.xinfra.lab.gateway.commons;
 
 public class AbstractConfigurable<C> implements Configurable<C> {
 

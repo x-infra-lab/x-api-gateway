@@ -1,18 +1,24 @@
 package io.github.xinfra.lab.gateway.serializer;
 
-import io.github.xinfra.lab.gateway.exception.ErrorCode;
+import org.junit.Assert;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SerializerTest {
 
     @Test
-    public void gsonSerializerTest(){
-        GsonSerializer serializer = Serializers.jsonSerializer();
+    public void jsonSerializerTest1() {
+        Serializer serializer = Serializers.jsonSerializer();
 
-        serializer.serialize(ErrorCode.SYSTEM_EXCEPTION)
-                .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
-                .doOnNext(s -> System.out.println(s));
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+
+        byte[] bytes = serializer.serialize(map)
+                .block();
+
+        Assert.assertEquals("{\"key\":\"value\"}", new String(bytes));
     }
+
 }

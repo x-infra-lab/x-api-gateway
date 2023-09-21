@@ -1,6 +1,6 @@
 package io.github.xinfra.lab.gateway.filter;
 
-import io.github.xinfra.lab.gateway.bootstrap.AbstractConfigurable;
+import io.github.xinfra.lab.gateway.commons.AbstractConfigurable;
 import reactor.netty.http.server.HttpServerRequest;
 
 import java.util.Map;
@@ -8,13 +8,14 @@ import java.util.Map;
 public class AddHeaderGatewayFilterFactory extends
         AbstractConfigurable<Map<String, String>>
         implements GatewayFilterFactory<Map<String, String>> {
+    public static final String NAME = "AddHeader";
     public AddHeaderGatewayFilterFactory() {
         super((Class) Map.class);
     }
 
     @Override
     public String getName() {
-        return "AddHeader";
+        return NAME;
     }
 
     @Override
