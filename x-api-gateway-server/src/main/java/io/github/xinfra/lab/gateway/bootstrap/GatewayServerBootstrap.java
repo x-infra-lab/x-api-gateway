@@ -3,8 +3,9 @@ package io.github.xinfra.lab.gateway.bootstrap;
 import com.google.common.collect.Lists;
 import io.github.xinfra.lab.gateway.commons.Assert;
 import io.github.xinfra.lab.gateway.config.GatewayConfigManager;
-import io.github.xinfra.lab.gateway.filter.GatewayFilter;
+import io.github.xinfra.lab.gateway.filter.global.GlobalGatewayFilter;
 import io.github.xinfra.lab.gateway.filter.global.RoutingFilter;
+import io.github.xinfra.lab.gateway.handler.DefaultWebExceptionHandler;
 import io.github.xinfra.lab.gateway.handler.ExceptionHandlingWebHandler;
 import io.github.xinfra.lab.gateway.handler.FilteringWebHandler;
 import io.github.xinfra.lab.gateway.handler.ReactorHttpHandler;
@@ -18,7 +19,6 @@ import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,18 +27,22 @@ import java.util.List;
 public class GatewayServerBootstrap {
 
     private int port;
-    private List<GatewayFilter> globalFilters = new ArrayList<>();
-    private List<WebExceptionHandler> webExceptionHandlers = new ArrayList<>();
+    private List<GlobalGatewayFilter> globalFilters;
+    private List<WebExceptionHandler> webExceptionHandlers;
     private RouteLocator routeLocator;
     private String configPath;
+    private DisposableServer server;
+
+    public RouteLocator getRouteLocator() {
+        return routeLocator;
+    }
 
     public GatewayServerBootstrap port(int port) {
         this.port = port;
         return this;
     }
 
-
-    public GatewayServerBootstrap globalFilters(List<GatewayFilter> globalFilters) {
+    public GatewayServerBootstrap globalFilters(List<GlobalGatewayFilter> globalFilters) {
         Assert.notNull(globalFilters, "globalFilters must not be null.");
         this.globalFilters = globalFilters;
         return this;
@@ -63,13 +67,16 @@ public class GatewayServerBootstrap {
     }
 
 
-    public DisposableServer start() {
-
+    public GatewayServerBootstrap start() {
         if (routeLocator == null) {
             routeLocator = getDefaultRouteLocator();
         }
-
-        globalFilters.addAll(getDefaultGlobalFilters());
+        if (globalFilters == null) {
+            globalFilters = getDefaultGlobalFilters();
+        }
+        if (webExceptionHandlers == null) {
+            webExceptionHandlers = getDefaultWebExceptionHandlers();
+        }
 
         // trigger GatewayFilterChain
         FilteringWebHandler filteringWebHandler = new FilteringWebHandler(globalFilters);
@@ -81,17 +88,26 @@ public class GatewayServerBootstrap {
         ReactorHttpHandler httpHandler = new ReactorHttpHandler(exceptionHandlingWebHandler);
 
         // start server
-        return HttpServer.create()
+        this.server = HttpServer.create()
                 .handle(httpHandler::handle)
                 .bindAddress(() -> new InetSocketAddress(port))
                 .bind().block();
+
+        return this;
     }
 
-    private List<GatewayFilter> getDefaultGlobalFilters() {
+    public GatewayServerBootstrap stop() {
+        this.server.disposeNow();
+        return this;
+    }
 
+    protected List<WebExceptionHandler> getDefaultWebExceptionHandlers() {
+        return Lists.newArrayList(new DefaultWebExceptionHandler());
+    }
+
+    protected List<GlobalGatewayFilter> getDefaultGlobalFilters() {
         return Lists.newArrayList(new RoutingFilter());
     }
-
 
     protected RouteLocator getDefaultRouteLocator() {
 

@@ -1,12 +1,16 @@
 package io.github.xinfra.lab.gateway.serializer;
 
+
 public class Serializers {
 
-    private static GsonSerializer gsonSerializer = new GsonSerializer();
+    /**
+     * default gsonSerializer
+     */
+    private static Serializer jsonSerializer = new GsonSerializer();
 
 
-    public static GsonSerializer jsonSerializer() {
-        // default gsonSerializer
-        return gsonSerializer;
+    public static Serializer jsonSerializer() {
+        return jsonSerializer;
     }
+    
 }

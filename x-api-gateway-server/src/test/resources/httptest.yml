@@ -1,6 +1,6 @@
 
 routes:
-  - id: test
+  - id: http-test
     predicates:
       - name: Path
         config: 'pattern: hello'
@@ -10,6 +10,6 @@ routes:
     endpoint:
       name: Http
       config: |
-        hosts:
+        urls:
           - http://127.0.0.1:9999/helloworld
           - http://localhost:9999/helloworld

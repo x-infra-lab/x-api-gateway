@@ -3,6 +3,7 @@ package io.github.xinfra.lab.gateway.handler;
 import io.github.xinfra.lab.gateway.commons.OrderedAwareComparator;
 import io.github.xinfra.lab.gateway.filter.DefaultGatewayFilterChain;
 import io.github.xinfra.lab.gateway.filter.GatewayFilter;
+import io.github.xinfra.lab.gateway.filter.global.GlobalGatewayFilter;
 import io.github.xinfra.lab.gateway.route.Route;
 import io.github.xinfra.lab.gateway.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -14,9 +15,9 @@ import static io.github.xinfra.lab.gateway.commons.ServerWebExchangeUtils.GATEWA
 
 public class FilteringWebHandler implements WebHandler {
 
-    private List<GatewayFilter> globalFilters;
+    private List<GlobalGatewayFilter> globalFilters;
 
-    public FilteringWebHandler(List<GatewayFilter> globalFilters) {
+    public FilteringWebHandler(List<GlobalGatewayFilter> globalFilters) {
         this.globalFilters = globalFilters;
     }
 

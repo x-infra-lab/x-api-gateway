@@ -1,6 +1,6 @@
 package io.github.xinfra.lab.gateway.predicate;
 
-import io.github.xinfra.lab.gateway.bootstrap.AbstractConfigurable;
+import io.github.xinfra.lab.gateway.commons.AbstractConfigurable;
 import io.github.xinfra.lab.gateway.server.ServerWebExchange;
 import lombok.Data;
 import reactor.core.publisher.Mono;
@@ -11,6 +11,7 @@ public class PathRoutePredicateFactory
         extends AbstractConfigurable<PathRoutePredicateFactory.PatternConfig>
         implements RoutePredicateFactory<PathRoutePredicateFactory.PatternConfig> {
 
+    public static final String NAME = "Path";
 
     public PathRoutePredicateFactory() {
         super(PatternConfig.class);
@@ -18,7 +19,7 @@ public class PathRoutePredicateFactory
 
     @Override
     public String getName() {
-        return "Path";
+        return NAME;
     }
 
     @Override

@@ -1,66 +1,27 @@
 package io.github.xinfra.lab.gateway.endpoint;
 
 
-import io.github.xinfra.lab.gateway.bootstrap.AbstractConfigurable;
-import lombok.Data;
+import io.github.xinfra.lab.gateway.commons.AbstractConfigurable;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.scheduler.Schedulers;
-import reactor.netty.http.client.HttpClient;
-import reactor.netty.http.server.HttpServerRequest;
-import reactor.netty.http.server.HttpServerResponse;
-
-import java.net.URI;
-import java.util.List;
-
-import static io.github.xinfra.lab.gateway.commons.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
-import static io.github.xinfra.lab.gateway.commons.ServerWebExchangeUtils.markResponseCommitted;
 
 @Slf4j
 public class HttpEndpointFactory extends
-        AbstractConfigurable<HttpEndpointFactory.Config>
-        implements EndpointFactory<HttpEndpointFactory.Config> {
+        AbstractConfigurable<HttpEndpoint.Config>
+        implements EndpointFactory<HttpEndpoint.Config> {
+    public static final String NAME = "Http";
+
     public HttpEndpointFactory() {
-        super(HttpEndpointFactory.Config.class);
+        super(HttpEndpoint.Config.class);
     }
 
     @Override
     public String getName() {
-        return "Http";
+        return NAME;
     }
 
     @Override
-    public Endpoint apply(Config config) {
-        return exchange -> {
-
-            HttpServerRequest request = exchange.getRequest();
-            HttpServerResponse response = exchange.getResponse();
-
-            return HttpClient.create()
-                    .headers(headers -> {
-                        headers.add(request.requestHeaders());
-                    })
-                    .request(request.method())
-                    .uri(URI.create(config.getHosts().get(0))) // TODO Chooser
-                    .send(request.receive())
-                    .response((httpClientResponse, byteBufFlux) ->
-                            response.status(httpClientResponse.status())
-                                    .headers(httpClientResponse.responseHeaders())
-                                    .sendByteArray(byteBufFlux.asByteArray())
-                    )
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .doOnError(t -> {
-                        log.error("fail invoke http endpoint:{}",
-                                exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR), t);
-                    }).doOnNext(v -> {
-                        markResponseCommitted(exchange);
-                    }).then();
-        };
+    public Endpoint apply(HttpEndpoint.Config config) {
+        return new HttpEndpoint(config);
     }
 
-
-    @Data
-    public static class Config {
-        List<String> hosts;
-        List<Integer> weights;
-    }
 }
